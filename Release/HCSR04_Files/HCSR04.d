@@ -1,0 +1,3 @@
+HCSR04_Files/HCSR04.o: ../HCSR04_Files/HCSR04.c ../HCSR04_Files/HCSR04.h
+
+../HCSR04_Files/HCSR04.h:

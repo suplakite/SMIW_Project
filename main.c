@@ -8,6 +8,7 @@
 
 #define LED_RED PD2
 #define LED_GREEN PD1
+#define BUTTON PB6
 
 //volatile int dlugosc = 0;
 int pom1 = 0; // Odleg³osc z ostatniego poamiaru
@@ -25,9 +26,11 @@ uint16_t drzwi = 300; // próg kontrolny okreœlaj¹cy czy drzwi s¹ otwarte czy zam
 uint8_t count = 0; // licznik do odleglosci
 
 ////////////////////////////////
-uint16_t odl_parkowania = 20; // odleg³oœc uznawana za odleglosc parkowania
+uint16_t odl_parkowania = 60; // odleg³oœc uznawana za odleglosc parkowania
 ////////////////////////////////
 
+uint8_t first = 0; // flaga pierwszego uruchomienia
+uint8_t check = 0; // do buttona
 void set_DDRx(void); // ustawienie wejsc i wyjsc
 void set_diodes(void); // ustawianie diod
 void set_diodes1(void); // ustawianie diod
@@ -47,7 +50,6 @@ void main( void ){
 	while(1){
 		drzwi = ADC_Measure(); // Pomiar czy drzwi otwarte czy zamkniête
 
-		//_delay_ms(2000); Jeszcze nie, ale w produkcji bêdzie sobie takie opóŸnienie
 
 		if(drzwi > 200){ // Drzwi zamkniête
 			PORTD |= (1<<LED_RED);
@@ -66,6 +68,7 @@ void main( void ){
 		}
 		else if(drzwi < 200){ //Drzwi otwarte
 
+
 					Distance_Measure(); // Pomiar odleg³oœci
 					_delay_ms(50);
 
@@ -76,17 +79,27 @@ void main( void ){
 					LCD_GoTo(0,0);
 					LCD_WriteText(konwersja);
 
-					sprintf(konwersja_D, "%i", pom1);
-					LCD_GoTo(6, 0);
-					LCD_WriteText(konwersja_D);
+					if (check == 14)
+					{
+						if(!(PINB & (1 << BUTTON) ))
+						{
+							odl_parkowania = licznik;
+							LCD_GoTo(6,0);
+							LCD_WriteText("Tak");
+						}
+						check = 0;
+					}
+
+					//sprintf(konwersja_D, "%i", pom1);
+					//LCD_GoTo(6, 0);
+					//LCD_WriteText(konwersja_D);
 
 					//sprintf(konwersja_D, "%i", stan);
-					LCD_GoTo(0, 1);
-					LCD_WriteText(stan);
-
-
+					//LCD_GoTo(0, 1);
+					//LCD_WriteText(stan);
 					//set_diodes(); //zapalanie i gaszenie diod bez sprawdzania czy wjezdza czy wyjezdza
 					set_diodes1(); //diody ON/OFF w zale¿noœci od wje¿d¿a/wyje¿d¿a
+					check = check +1;
 				}
 		}
 }
@@ -137,6 +150,8 @@ void set_DDRx(void){
 	DDRD &= ~(1<<Echo);
 	DDRD |= (1<<LED_RED);
 	DDRD |= (1<<LED_GREEN);
+	DDRB &= (1<<BUTTON);
+	PORTB |= (1<<BUTTON);
 }
 void Distance_Measure( void ){
 
@@ -153,7 +168,7 @@ void Distance_Measure( void ){
 			_delay_us(10);
 		}
 
-		if(licznik - pom1 > 50 || pom1 - licznik > 50){
+		if(licznik - pom1 > 150 || pom1 - licznik > 150){
 				// jak pomiar zbytnio odbiega to go wywal
 			stan = "wywalony";
 		}
